@@ -157,10 +157,9 @@ abstract contract ERC20Minter is
         emit ChangeCoefficient(key, value);
     }
 
-    // function setDCarbon(address value) public onlyOwner {
-    //     _coefficient[key] = value;
-    //     emit ChangeCoefficient(key, value);
-    // }
+    function getCoefficient(bytes32 key) public view returns (int128) {
+        return _coefficient[key];
+    }
 
     event EnableIOT(address indexed owner, address indexed iot);
     event SuspendIOT(address indexed iot);
