@@ -34,7 +34,7 @@ abstract contract ERC20Minter is
         CountersUpgradeable.Counter nonce;
     }
 
-    mapping(bytes32 => int128) private _coefficient; //
+    mapping(bytes32 => int128) public _coefficient; //
     mapping(uint32 => uint256) private _limits; // Device type => max amount per signature
     mapping(address => IOTDevice) private _devices; // Devices address => IOT Devices (info)
 
@@ -157,6 +157,11 @@ abstract contract ERC20Minter is
         emit ChangeCoefficient(key, value);
     }
 
+    function setFoundation(address foundation) public onlyOwner {
+        _foundation = foundation;
+        emit ChangeFoundation(foundation);
+    }
+
     function getCoefficient(bytes32 key) public view returns (int128) {
         return _coefficient[key];
     }
@@ -164,6 +169,7 @@ abstract contract ERC20Minter is
     event EnableIOT(address indexed owner, address indexed iot);
     event SuspendIOT(address indexed iot);
 
+    event ChangeFoundation(address indexed foundation);
     event ChangeLimit(uint32 indexed key, uint256 value);
     event ChangeCoefficient(bytes32 indexed key, int128 value);
 }

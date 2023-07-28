@@ -5,6 +5,8 @@ require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 
+console.log("Network: ", process.env.DEFAULT_NETWORK || "ganacheLocal");
+
 module.exports = {
   defaultNetwork: process.env.DEFAULT_NETWORK || "ganacheLocal",
   networks: {
