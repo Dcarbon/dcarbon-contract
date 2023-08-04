@@ -19,11 +19,12 @@ contract Carbon is ERC20Upgradeable, ERC20Minter, UUPSUpgradeable {
     function initialize(
         string memory name_,
         string memory symbol_,
+        address foundation_,
         address dcarbon_
     ) public initializer {
         __Ownable_init();
         __ERC20_init(name_, symbol_);
-        __ERC20Minter_init(dcarbon_, 1e9);
+        __ERC20Minter_init(foundation_, dcarbon_, 5e8);
     }
 
     function _authorizeUpgrade(

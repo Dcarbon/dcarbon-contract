@@ -23,7 +23,7 @@ abstract contract ERC20Minter is
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    bytes32 constant _MINT_TYPEHASH =
+    bytes32 private constant _MINT_TYPEHASH =
         keccak256("Mint(address iot,uint256 amount,uint256 nonce)");
 
     struct IOTDevice {
@@ -34,28 +34,30 @@ abstract contract ERC20Minter is
         CountersUpgradeable.Counter nonce;
     }
 
-    mapping(bytes32 => int128) public _coefficient; //
+    mapping(bytes32 => int128) private _coefficient; //
     mapping(uint32 => uint256) private _limits; // Device type => max amount per signature
     mapping(address => IOTDevice) private _devices; // Devices address => IOT Devices (info)
 
-    uint256 private _fee; // percent
-    address private _foundation;
+    uint256 private _fee; // // 1 / 1e9
+    address private _foundation; //
 
-    uint256 public _rate;
+    uint256 public _rate; // 1 / 1e9
     mapping(address => uint256) public _balaceDCarbon;
     IERC20Upgradeable public _dcarbon;
 
     function __ERC20Minter_init(
+        address foundation_,
         address dcarbon_,
         uint256 rate_
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         _rate = rate_;
+        _foundation = foundation_;
         _dcarbon = IERC20Upgradeable(dcarbon_);
 
         __Ownable_init_unchained();
         __EIP712_init_unchained(name(), "1");
 
-        _fee = 5; // percent
+        _fee = 5 * 1e7;
     }
 
     function mint(
@@ -88,12 +90,12 @@ abstract contract ERC20Minter is
         }
         device.nonce.increment();
 
-        uint256 onePercent = amount / 100;
-        _mintFrom(iot, receiver, onePercent * (100 - _fee));
-        _mintFrom(iot, _foundation, onePercent * _fee);
+        uint256 mintFee = (amount * _fee) / 1e9;
+        _mintFrom(iot, receiver, amount - mintFee);
+        _mintFrom(iot, _foundation, mintFee);
 
         // Calculate dcarbon
-        _balaceDCarbon[device.owner] += (amount * _rate) / 1e18;
+        _balaceDCarbon[device.owner] += (amount * _rate) / 1e9;
 
         return true;
     }
@@ -140,7 +142,7 @@ abstract contract ERC20Minter is
         require(_balaceDCarbon[_msgSender()] >= amount, "M0008");
 
         _balaceDCarbon[_msgSender()] -= amount;
-        _dcarbon.transfer(_msgSender(), amount);
+        require(_dcarbon.transfer(_msgSender(), amount), "M0010");
     }
 
     function updateRate() public onlyOwner {

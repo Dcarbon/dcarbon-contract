@@ -30,6 +30,7 @@ const types = {
     },
   ],
 };
+const foundationAddress = "0xD0b5b174dB586bFC076A7A8E12bee2468aeD0E93";
 
 function getDomain(contractAddress) {
   return {
@@ -56,14 +57,7 @@ async function signAndMint(carbonCt, signer, data) {
 
   const { r, s, v } = ethers.utils.splitSignature(signature);
 
-  return await carbonCt.mint(
-    signer.address,
-    ethers.utils.parseEther("1"),
-    1,
-    v,
-    r,
-    s
-  );
+  return await carbonCt.mint(signer.address, data.amount, data.nonce, v, r, s);
 }
 
 describe("Carbon", () => {
@@ -96,7 +90,12 @@ describe("Carbon", () => {
     const cProxyContract = await ProxyFactory.deploy(carbon.address);
     carbonProxy = CarbonFactory.attach(cProxyContract.address);
 
-    await carbonProxy.initialize(carbonName, carbonSymbol, dProxy.address);
+    await carbonProxy.initialize(
+      carbonName,
+      carbonSymbol,
+      foundationAddress,
+      dProxy.address
+    );
     await carbonProxy.setLimit(iotTypeTest, ethers.utils.parseEther("120"));
 
     await dProxy.initialize(
@@ -117,7 +116,12 @@ describe("Carbon", () => {
 
     it("should revert if Initialize more than one time", async () => {
       await expect(
-        carbonProxy.initialize(carbonName, carbonSymbol, dProxy.address)
+        carbonProxy.initialize(
+          carbonName,
+          carbonSymbol,
+          foundationAddress,
+          dProxy.address
+        )
       ).to.be.revertedWith(`Initializable: contract is already initialized`);
     });
   });
@@ -214,19 +218,19 @@ describe("Carbon", () => {
       });
     });
 
-    // describe("suspendIOT", () => {
-    //   it("should revert if not owner", async () => {
-    //     await expect(
-    //       carbonProxy.connect(account2).suspendIOT(account1.address)
-    //     ).to.be.revertedWith(msgIsNotOwner);
-    //   });
-    //   it("should emit event correctly", async () => {
-    //     const tx = await carbonProxy.suspendIOT(account1.address);
-    //     await expect(tx)
-    //       .to.be.emit(carbonProxy, "SuspendIOT")
-    //       .withArgs(account1.address);
-    //   });
-    // });
+    describe("suspendIOT", () => {
+      it("should revert if not owner", async () => {
+        await expect(
+          carbonProxy.connect(account2).suspendIOT(account1.address)
+        ).to.be.revertedWith(msgIsNotOwner);
+      });
+      it("should emit event correctly", async () => {
+        const tx = await carbonProxy.suspendIOT(account1.address);
+        await expect(tx)
+          .to.be.emit(carbonProxy, "SuspendIOT")
+          .withArgs(account1.address);
+      });
+    });
 
     describe("setLimit", () => {
       it("should revert if not owner", async () => {
@@ -401,35 +405,41 @@ describe("Carbon", () => {
         await network.provider.send("evm_increaseTime", [oneDay * 2]);
         await network.provider.send("evm_mine", []);
 
+        var totalCarbon = ethers.utils.parseUnits("2.5", 9);
+        var carbonFee = totalCarbon.mul(5e7).div(1e9);
+        var carbonRemain = totalCarbon.sub(carbonFee);
+        var bonusDCarbon = totalCarbon.div(2);
+
         const data = {
           iot: iotWal.address,
-          amount: ethers.utils.parseEther("1"),
+          amount: totalCarbon,
           nonce: 1,
         };
 
-        var carbonProxy2 = carbonProxy.connect(account2);
-        await signAndMint(carbonProxy2, iotWal, data);
+        var cbProxy2 = carbonProxy.connect(account2);
+        await signAndMint(cbProxy2, iotWal, data);
 
-        expect(await carbonProxy.getNonce(iotWal.address)).to.be.equal(1);
-        // expect(await carbonProxy.getDCarbon(account2.address)).to.be.equal(
-        //   ethers.utils.parseEther("1")
-        // );
+        expect(await cbProxy2.getNonce(iotWal.address)).to.be.equal(1);
+        expect(await cbProxy2.balanceOf(account2.address)).to.be.equal(
+          carbonRemain
+        );
+        expect(await cbProxy2.balanceOf(foundationAddress)).to.be.equal(
+          carbonFee
+        );
+
+        expect(await cbProxy2.getDCarbon(account2.address)).to.be.equal(
+          bonusDCarbon
+        );
 
         //drawDcarbon correcttly
-        const txWithdraw = await carbonProxy.withdrawDCarbon(
-          ethers.utils.parseEther("1")
-        );
+        const txWithdraw = await cbProxy2.withdrawDCarbon(bonusDCarbon);
 
         await expect(txWithdraw)
           .to.be.emit(dProxy, "Transfer")
-          .withArgs(
-            carbonProxy.address,
-            account1.address,
-            ethers.utils.parseEther("1")
-          );
+          .withArgs(cbProxy2.address, account2.address, bonusDCarbon);
 
-        expect(await dProxy.balanceOf(account1.address)).to.be.equal(
-          ethers.utils.parseEther("1")
+        expect(await dProxy.balanceOf(account2.address)).to.be.equal(
+          bonusDCarbon
         );
       });
     });
