@@ -1,8 +1,8 @@
 const { SignerWithAddress } = require("@nomiclabs/hardhat-ethers/signers");
 const { expect } = require("chai");
-const { BigNumber, Contract } = require("ethers");
+const { Contract } = require("ethers");
 const { parseEther } = require("ethers/lib/utils");
-const { ethers, run, network } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
 const carbonName = "CARBON";
 const carbonSymbol = "CB";

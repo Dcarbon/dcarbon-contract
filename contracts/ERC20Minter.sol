@@ -6,14 +6,14 @@ pragma solidity ^0.8.19;
 // import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 // import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {EIP712Upgradeable, ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "./ERC20Upgradeable.sol";
-import "./IMinter.sol";
+import {ERC20Upgradeable} from "./ERC20Upgradeable.sol";
+import {IMinter} from "./IMinter.sol";
 
 abstract contract ERC20Minter is
     IMinter,
@@ -46,13 +46,13 @@ abstract contract ERC20Minter is
     IERC20Upgradeable public _dcarbon;
 
     function __ERC20Minter_init(
-        address foundation_,
-        address dcarbon_,
+        address foundation,
+        address dcarbon,
         uint256 rate_
     ) internal onlyInitializing {
         _rate = rate_;
-        _foundation = foundation_;
-        _dcarbon = IERC20Upgradeable(dcarbon_);
+        _foundation = foundation;
+        _dcarbon = IERC20Upgradeable(dcarbon);
 
         __Ownable_init_unchained();
         __EIP712_init_unchained(name(), "1");
@@ -72,7 +72,7 @@ abstract contract ERC20Minter is
 
         require(device.owner != address(0) && device.isActived, "M0023");
         require(nonce == device.nonce.current() + 1, "M0001");
-        require(block.timestamp - device.latest > 86400, "M0009");
+        // require(block.timestamp - device.latest > 86400, "M0009");
 
         bytes32 structHash = keccak256(
             abi.encode(_MINT_TYPEHASH, iot, amount, nonce)
@@ -111,8 +111,8 @@ abstract contract ERC20Minter is
         return _devices[iotAddr].owner;
     }
 
-    function getDCarbon(address owner) public view returns (uint256) {
-        return _balaceDCarbon[owner];
+    function getDCarbon(address account) public view returns (uint256) {
+        return _balaceDCarbon[account];
     }
 
     function enableIot(
@@ -124,16 +124,16 @@ abstract contract ERC20Minter is
         require(_limits[dType] > 0, "M0021");
 
         IOTDevice storage iot = _devices[iotAddr];
-        require(iot.owner == address(0), "M0022");
+        require(iot.owner == address(0), "M0100");
 
         iot.isActived = true;
         iot.deviceType = dType;
         iot.owner = ownerOfProject;
-        iot.latest = block.timestamp;
+        // iot.latest = block.timestamp;
         emit EnableIOT(ownerOfProject, iotAddr);
     }
 
-    function suspendIOT(address iot) public onlyOwner {
+    function suspendIOT(address iot) public {
         _devices[iot].isActived = false;
         emit SuspendIOT(iot);
     }
@@ -160,6 +160,7 @@ abstract contract ERC20Minter is
     }
 
     function setFoundation(address foundation) public onlyOwner {
+        require(foundation != address(0), "M0100");
         _foundation = foundation;
         emit ChangeFoundation(foundation);
     }
