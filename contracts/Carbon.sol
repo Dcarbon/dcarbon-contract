@@ -8,22 +8,21 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 
 import {ERC20Upgradeable} from "./ERC20Upgradeable.sol";
 import {ERC20Minter} from "./ERC20Minter.sol";
-import {IMinter} from "./IMinter.sol";
+import {IERC20Minter} from "./interfaces/IERC20Minter.sol";
 
-contract Carbon is ERC20Upgradeable, ERC20Minter, UUPSUpgradeable {
-    function burn(uint256 amount) public {
-        _burn(_msgSender(), amount);
-    }
-
+contract Carbon is IERC20Minter, ERC20Minter, UUPSUpgradeable {
     function initialize(
         string memory name_,
         string memory symbol_,
-        address foundation_,
         address dcarbon_
     ) public initializer {
         __Ownable_init();
         __ERC20_init(name_, symbol_);
-        __ERC20Minter_init(foundation_, dcarbon_, 5e8);
+        __ERC20Minter_init(dcarbon_, 5e8);
+    }
+
+    function burn(uint256 amount) public {
+        _burn(_msgSender(), amount);
     }
 
     function _authorizeUpgrade(

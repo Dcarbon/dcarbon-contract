@@ -8,7 +8,7 @@ const carbonName = "CARBON";
 const carbonSymbol = "CB";
 const carbonVersion = "1";
 const oneDay = 86400;
-const iotTypeTest = 999888777;
+const iotTypeTest = 65123;
 
 const msgIsNotOwner = "Ownable: caller is not the owner";
 const msgDeviceNotActived = "M0023";
@@ -90,12 +90,7 @@ describe("Carbon", () => {
     const cProxyContract = await ProxyFactory.deploy(carbon.address);
     carbonProxy = CarbonFactory.attach(cProxyContract.address);
 
-    await carbonProxy.initialize(
-      carbonName,
-      carbonSymbol,
-      foundationAddress,
-      dProxy.address
-    );
+    await carbonProxy.initialize(carbonName, carbonSymbol, dProxy.address);
     await carbonProxy.setLimit(iotTypeTest, ethers.utils.parseEther("120"));
 
     await dProxy.initialize(
@@ -116,12 +111,7 @@ describe("Carbon", () => {
 
     it("should revert if Initialize more than one time", async () => {
       await expect(
-        carbonProxy.initialize(
-          carbonName,
-          carbonSymbol,
-          foundationAddress,
-          dProxy.address
-        )
+        carbonProxy.initialize(carbonName, carbonSymbol, dProxy.address)
       ).to.be.revertedWith(`Initializable: contract is already initialized`);
     });
   });
@@ -165,47 +155,52 @@ describe("Carbon", () => {
         await expect(
           carbonProxy
             .connect(account2)
-            .enableIot(account2.address, 100, account3.address)
+            .enableDevice(account2.address, account3.address, 100)
         ).to.be.revertedWith(msgIsNotOwner);
       });
 
-      it("should revert if iot owner != address 0 when enable project", async () => {
-        await carbonProxy.enableIot(
+      it("should revert if device was set owner ", async () => {
+        await carbonProxy.enableDevice(
           account2.address,
-          iotTypeTest,
-          account3.address
+          account3.address,
+          iotTypeTest
         );
+
         await expect(
-          carbonProxy.enableIot(account2.address, iotTypeTest, account3.address)
-        ).to.be.reverted;
+          carbonProxy.enableDevice(
+            account1.address,
+            account3.address,
+            iotTypeTest
+          )
+        ).to.be.revertedWith("M0100");
       });
 
       // it("should revert if owner address parameter is address 0", async () => {
-      //   await expect(carbonProxy.enableIot(address0, [account3.address])).to
+      //   await expect(carbonProxy.enableDevice(address0, [account3.address])).to
       //     .be.reverted;
       // });
 
-      it("should revert if iot address parameter is address 0", async () => {
+      it("should revert if iot address parameter is not yet set", async () => {
         await expect(
-          carbonProxy.enableIot(account2.address, iotTypeTest, address0)
+          carbonProxy.enableDevice(account2.address, address0, 123)
         ).to.be.revertedWith("M0020");
       });
 
       it("should revert if iot type is not set", async () => {
         await expect(
-          carbonProxy.enableIot(account2.address, 10, account3.address)
+          carbonProxy.enableDevice(account2.address, account3.address, 10)
         ).to.be.revertedWith("M0021");
       });
 
       it("should enable project correctly", async () => {
-        const tx = await carbonProxy.enableIot(
+        const tx = await carbonProxy.enableDevice(
           account2.address,
-          iotTypeTest,
-          account3.address
+          account3.address,
+          iotTypeTest
         );
 
         await expect(tx)
-          .to.be.emit(carbonProxy, "EnableIOT")
+          .to.be.emit(carbonProxy, "EnableDevice")
           .withArgs(account2.address, account3.address);
 
         //get receive
@@ -218,21 +213,21 @@ describe("Carbon", () => {
       });
     });
 
-    describe("suspendIOT", () => {
+    describe("SuspendDevice", () => {
       it("should revert if not owner", async () => {
         await expect(
-          carbonProxy.connect(account2).suspendIOT(account1.address)
+          carbonProxy.connect(account2).suspendDevice(account1.address)
         ).to.be.revertedWith(msgIsNotOwner);
       });
       it("should emit event correctly", async () => {
-        const tx = await carbonProxy.suspendIOT(account1.address);
+        const tx = await carbonProxy.suspendDevice(account1.address);
         await expect(tx)
-          .to.be.emit(carbonProxy, "SuspendIOT")
+          .to.be.emit(carbonProxy, "SuspendDevice")
           .withArgs(account1.address);
       });
     });
 
-    describe("setLimit", () => {
+    describe("SetLimit", () => {
       it("should revert if not owner", async () => {
         await expect(
           carbonProxy.connect(account2).setLimit(iotTypeTest, 123)
@@ -264,10 +259,10 @@ describe("Carbon", () => {
 
     describe("mint", () => {
       beforeEach(async () => {
-        await carbonProxy.enableIot(
+        await carbonProxy.enableDevice(
           account1.address,
-          iotTypeTest,
-          account3.address
+          account3.address,
+          iotTypeTest
         );
         // await carbonProxy.setLimit(iotTypeTest, ethers.utils.parseEther("10"));
       });
@@ -286,7 +281,7 @@ describe("Carbon", () => {
       });
 
       it("should revert if device is not enable", async () => {
-        await carbonProxy.suspendIOT(account2.address);
+        await carbonProxy.suspendDevice(account2.address);
         await expect(
           carbonProxy.mint(
             account2.address,
@@ -342,10 +337,10 @@ describe("Carbon", () => {
         const pKey = new ethers.Wallet.createRandom();
         const iotWallet = new ethers.Wallet(pKey, ethers.provider);
 
-        await carbonProxy.enableIot(
+        await carbonProxy.enableDevice(
           account1.address,
-          iotTypeTest,
-          iotWallet.address
+          iotWallet.address,
+          iotTypeTest
         );
         await network.provider.send("evm_increaseTime", [oneDay * 2]);
         await network.provider.send("evm_mine", []);
@@ -374,10 +369,10 @@ describe("Carbon", () => {
         const pKey = new ethers.Wallet.createRandom();
         const signer = new ethers.Wallet(pKey, ethers.provider);
 
-        await carbonProxy.enableIot(
+        await carbonProxy.enableDevice(
           account1.address,
-          iotTypeTest,
-          signer.address
+          signer.address,
+          iotTypeTest
         );
         await network.provider.send("evm_increaseTime", [oneDay * 2]);
         await network.provider.send("evm_mine", []);
@@ -397,10 +392,10 @@ describe("Carbon", () => {
         const pKey = new ethers.Wallet.createRandom();
         const iotWal = new ethers.Wallet(pKey, ethers.provider);
 
-        await carbonProxy.enableIot(
+        await carbonProxy.enableDevice(
           account2.address,
-          iotTypeTest,
-          iotWal.address
+          iotWal.address,
+          iotTypeTest
         );
         await network.provider.send("evm_increaseTime", [oneDay * 2]);
         await network.provider.send("evm_mine", []);
@@ -419,17 +414,22 @@ describe("Carbon", () => {
         var cbProxy2 = carbonProxy.connect(account2);
         await signAndMint(cbProxy2, iotWal, data);
 
-        expect(await cbProxy2.getNonce(iotWal.address)).to.be.equal(1);
-        expect(await cbProxy2.balanceOf(account2.address)).to.be.equal(
-          carbonRemain
-        );
-        expect(await cbProxy2.balanceOf(foundationAddress)).to.be.equal(
-          carbonFee
-        );
+        expect(
+          await cbProxy2.getNonce(iotWal.address),
+          "Nonce should be increase"
+        ).to.be.equal(1);
+        expect(
+          await cbProxy2.balanceOf(account2.address),
+          "Carbon balance of owner should increase "
+        ).to.be.equal(carbonRemain);
+        // expect(await cbProxy2.balanceOf(foundationAddress)).to.be.equal(
+        //   carbonFee
+        // );
 
-        expect(await cbProxy2.getDCarbon(account2.address)).to.be.equal(
-          bonusDCarbon
-        );
+        expect(
+          await cbProxy2.getDCarbon(account2.address),
+          "DCarbon balance of owner should be increase"
+        ).to.be.equal(bonusDCarbon);
 
         //drawDcarbon correcttly
         const txWithdraw = await cbProxy2.withdrawDCarbon(bonusDCarbon);
