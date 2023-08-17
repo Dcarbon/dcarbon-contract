@@ -15,3 +15,5 @@ utils
 #Hardhat files
 cache
 artifacts
+
+docs

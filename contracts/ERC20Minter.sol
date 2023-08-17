@@ -16,6 +16,19 @@ import {IERC20Minter} from "./interfaces/IERC20Minter.sol";
 import {ERC20Upgradeable} from "./ERC20Upgradeable.sol";
 import {Coefficient} from "./Coefficient.sol";
 
+/**
+ * @dev This contract manages the minting process of the CARBON token by verifying the IoT device data through 
+ * EIP-712 data hashing and signing standard.
+ * 
+ * Each IoT device holds a private key which can be used to sign off sensor data. The private key is presumably unknown even to
+ * its producer and cannot be extracted by any means.
+ * 
+ * To prevent the contract from replay attacks, a nonce number set for each IoT device and will be increased each time the
+ * mint() function is executed.
+ * 
+ * This contract also implements a function to withdraw associated locked DCARBON tokens when minting CARBONs.
+ */
+
 abstract contract ERC20Minter is
     IERC20Minter,
     OwnableUpgradeable,
@@ -25,44 +38,44 @@ abstract contract ERC20Minter is
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    // Type hash for mint (ERC712)
+    // Type hash for mint (EIP-712)
     bytes32 private constant _MINT_TYPEHASH =
         keccak256("Mint(address iot,uint256 amount,uint256 nonce)");
 
     struct MinterDevice {
-        // Device status
+        // IoT device status
         bool isActived;
-        // Type of device
+        // Type of IoT device
         uint16 deviceType;
-        // Latest mint
+        // Latest mint time
         uint64 latest;
-        // Owner of device
+        // Owner of the IoT device
         address owner;
-        // Nonce for mint signature
+        // Current nonce of the IoT device
         CountersUpgradeable.Counter nonce;
     }
 
-    // Device type => max amount per signature
+    // IoT Device type => max amount for a signature
     mapping(uint32 => uint256) private _limits;
 
-    // Devices address => Minter Devices (info)
-    // Device table
+    // IoT Devices address => Minter IoT Devices (info)
+    // IoT Device hash table
     mapping(address => MinterDevice) private _devices;
 
-    // Balance DCarbon was minted when mint carbon
+    // Balance of the associated DCARBON was unlocked when mint CARBON
     mapping(address => uint256) public _balaceDCarbon;
 
-    // Fee percent for foundation
+    // Fee percent for the Dcarbon foundation
     // 1 / 1e9 (1e9 equavalent 100%)
     uint128 private _fee;
 
-    // Fee was collected
+    // Current collected fee
     uint128 private _feeAmount;
 
-    // Rate to mint DCarbon when mint Carbon
+    // unlock rate for DCARBON when mint CARBON
     uint256 private _rate; // 1 / 1e9 (1e9 equavalent 100%)
 
-    // DCarbon contract address
+    // DCARBON token contract address
     IERC20Upgradeable public _dcarbon;
 
     // Initialize
@@ -117,7 +130,7 @@ abstract contract ERC20Minter is
         _feeAmount += uint128(mintFee);
         _mintFrom(minter, device.owner, amount - mintFee);
 
-        // Calculate dcarbon
+        // Calculate DCARBON
         _balaceDCarbon[device.owner] += (amount * _rate) / 1e9;
 
         return true;
@@ -158,8 +171,8 @@ abstract contract ERC20Minter is
         emit SuspendDevice(device);
     }
 
-    /// @notice Withdraw DCarbon
-    /// @param amount Dcarbon was withdraw
+    /// @notice Withdraw unlocked DCARBON
+    /// @param amount DCARBON to be withdrawn
     function withdrawDCarbon(uint256 amount) public {
         require(_balaceDCarbon[_msgSender()] >= amount, "M0042");
 
@@ -167,7 +180,7 @@ abstract contract ERC20Minter is
         require(_dcarbon.transfer(_msgSender(), amount), "M0041");
     }
 
-    /// @notice Set rate DCarbon was minted parallel with Carbon
+    /// @notice Set unlock rate for DCARBON when minting CARBON
     /// @param rate The address to which collected protocol fees should be sent
     function setRate(uint256 rate) public onlyOwner {
         require(rate < 1e9, "M0040");
@@ -197,18 +210,18 @@ abstract contract ERC20Minter is
     }
 
     /// @notice Get DCarbon balance of `account`
-    /// @param account The fee collected
+    /// @param account address to get the balance
     /// @return Returns the amount of DCarbon tokens owned by `account`.
     function getDCarbon(address account) public view returns (uint256) {
         return _balaceDCarbon[account];
     }
 
-    /// @notice Emitted when the mint dcarbon rate change
-    /// @param value The rate of dcarbon per each carbon was minted
+    /// @notice Emitted when the DCARBON unlock rate is changed
+    /// @param value The unlock rate of DCARBON per each carbon was minted
     event ChangeRate(uint256 value);
 
-    /// @notice Emitted when the collected protocol fees are withdrawn by the factory owner
-    /// @param recipient The address that receives the collected protocol fees
-    /// @param amount The amount of  fees that is withdrawn
+    /// @notice Emitted when the collected protocol fees are withdrawn by the project owner
+    /// @param recipient The address that will receive the collected protocol fees
+    /// @param amount The amount of fees that is withdrawn
     event CollectFee(address indexed recipient, uint128 amount);
 }
