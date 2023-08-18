@@ -4,7 +4,7 @@ coverage
 coverage.json
 typechain
 
-sdata
+data
 ctest
 
 .vscode
@@ -16,4 +16,5 @@ utils
 cache
 artifacts
 
+# Autogen docs
 docs

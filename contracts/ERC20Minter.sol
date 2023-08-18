@@ -2,10 +2,6 @@
 
 pragma solidity ^0.8.19;
 
-// import "@openzeppelin/contracts/utils/Counters.sol";
-// import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
-
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {EIP712Upgradeable, ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
@@ -17,15 +13,15 @@ import {ERC20Upgradeable} from "./ERC20Upgradeable.sol";
 import {Coefficient} from "./Coefficient.sol";
 
 /**
- * @dev This contract manages the minting process of the CARBON token by verifying the IoT device data through 
+ * @dev This contract manages the minting process of the CARBON token by verifying the IoT device data through
  * EIP-712 data hashing and signing standard.
- * 
+ *
  * Each IoT device holds a private key which can be used to sign off sensor data. The private key is presumably unknown even to
  * its producer and cannot be extracted by any means.
- * 
+ *
  * To prevent the contract from replay attacks, a nonce number set for each IoT device and will be increased each time the
  * mint() function is executed.
- * 
+ *
  * This contract also implements a function to withdraw associated locked DCARBON tokens when minting CARBONs.
  */
 

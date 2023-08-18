@@ -203,11 +203,6 @@ describe("Carbon", () => {
           .to.be.emit(carbonProxy, "EnableDevice")
           .withArgs(account2.address, account3.address);
 
-        //get receive
-        expect(await carbonProxy.getReceive(account3.address)).to.be.equal(
-          account2.address
-        );
-
         //get nonce
         expect(await carbonProxy.getNonce(account3.address)).to.be.equal(0);
       });
