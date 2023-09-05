@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -17,8 +17,8 @@ contract Carbon is IERC20Minter, ERC20Minter, UUPSUpgradeable {
         address dcarbon_
     ) public initializer {
         __Ownable_init();
-        __ERC20_init(name_, symbol_);
-        __ERC20Minter_init(dcarbon_, 5e8);
+        initERC20Upgradeable(name_, symbol_);
+        initERC20Minter(dcarbon_, 5e8);
     }
 
     function burn(uint256 amount) public {

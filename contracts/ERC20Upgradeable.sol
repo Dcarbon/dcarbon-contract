@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
 import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -45,20 +45,13 @@ contract ERC20Upgradeable is ContextUpgradeable, IERC20MetadataUpgradeable {
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
-     * The default value of {decimals} is 18. To select a different value for
+     * The default value of {decimals} is 9. To select a different value for
      * {decimals} you should overload it.
      *
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    function __ERC20_init(
-        string memory name_,
-        string memory symbol_
-    ) internal onlyInitializing {
-        __ERC20_init_unchained(name_, symbol_);
-    }
-
-    function __ERC20_init_unchained(
+    function initERC20Upgradeable(
         string memory name_,
         string memory symbol_
     ) internal onlyInitializing {
@@ -324,28 +317,6 @@ contract ERC20Upgradeable is ContextUpgradeable, IERC20MetadataUpgradeable {
         _afterTokenTransfer(from, account, amount);
     }
 
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     */
-    // function _mint(
-    //     address from,
-    //     address account,
-    //     uint256 amount
-    // ) internal virtual {
-    //     require(account != address(0), "ERC20: mint to the zero address");
-    //     _beforeTokenTransfer(address(0), account, amount);
-    //     _totalSupply += amount;
-    //     _balances[account] += amount;
-    //     emit Transfer(from, account, amount);
-    //     _afterTokenTransfer(address(0), account, amount);
-    // }
-
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
@@ -463,11 +434,4 @@ contract ERC20Upgradeable is ContextUpgradeable, IERC20MetadataUpgradeable {
         address to,
         uint256 amount
     ) internal virtual {}
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[45] private __gap;
 }

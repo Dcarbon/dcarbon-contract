@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -61,23 +61,23 @@ abstract contract ERC20Minter is
     // Balance of the associated DCARBON was unlocked when mint CARBON
     mapping(address => uint256) public _balaceDCarbon;
 
-    // Fee percent for the Dcarbon foundation
-    // 1 / 1e9 (1e9 equavalent 100%)
-    uint128 private _fee;
-
     // Current collected fee
     uint128 private _feeAmount;
 
+    // Fee percent for the Dcarbon foundation
+    // 1 / 1e9 (1e9 equavalent 100%)
+    uint64 private _fee;
+
     // unlock rate for DCARBON when mint CARBON
-    uint256 private _rate; // 1 / 1e9 (1e9 equavalent 100%)
+    uint64 private _rate; // 1 / 1e9 (1e9 equavalent 100%)
 
     // DCARBON token contract address
     IERC20Upgradeable public _dcarbon;
 
     // Initialize
-    function __ERC20Minter_init(
+    function initERC20Minter(
         address dcarbon,
-        uint256 rate_
+        uint64 rate_
     ) internal onlyInitializing {
         _rate = rate_;
         _dcarbon = IERC20Upgradeable(dcarbon);
@@ -101,7 +101,7 @@ abstract contract ERC20Minter is
 
         require(device.owner != address(0) && device.isActived, "M0023");
         require(nonce == device.nonce.current() + 1, "M0001");
-        require(block.timestamp - device.latest > 86400, "M0009");
+        require(block.timestamp - device.latest > 1 days, "M0009");
 
         bytes32 structHash = keccak256(
             abi.encode(_MINT_TYPEHASH, minter, amount, nonce)
@@ -111,10 +111,7 @@ abstract contract ERC20Minter is
         address signer = ECDSAUpgradeable.recover(hashed, v, r, s);
         require(minter == signer, "M0002");
 
-        require(
-            device.owner == _msgSender() || device.owner != device.owner,
-            "M0003"
-        );
+        require(device.owner == _msgSender(), "M0003");
 
         if (amount > _limits[device.deviceType]) {
             amount = _limits[device.deviceType];
@@ -177,8 +174,8 @@ abstract contract ERC20Minter is
     }
 
     /// @notice Set unlock rate for DCARBON when minting CARBON
-    /// @param rate The address to which collected protocol fees should be sent
-    function setRate(uint256 rate) public onlyOwner {
+    /// @param rate The value use for unlocking DCARBON when minting CARBON
+    function setRate(uint64 rate) public onlyOwner {
         require(rate < 1e9, "M0040");
         _rate = rate;
         emit ChangeRate(rate);
@@ -187,7 +184,7 @@ abstract contract ERC20Minter is
     /// @notice Set `limit` for `deviceType`
     /// @param deviceType Type of device was set
     /// @param limit Limit value
-    function setLimit(uint32 deviceType, uint256 limit) public onlyOwner {
+    function setLimit(uint16 deviceType, uint256 limit) public onlyOwner {
         _limits[deviceType] = limit;
         emit ChangeLimit(deviceType, limit);
     }
@@ -198,7 +195,7 @@ abstract contract ERC20Minter is
     function collectFee(address recipient, uint128 amount) public onlyOwner {
         uint256 fee = _feeAmount;
         require(recipient != address(0), "M030");
-        require(amount <= fee, "");
+        require(amount <= fee, "M0008");
 
         _feeAmount -= amount;
         _mint(recipient, amount);
