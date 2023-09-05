@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.18;
 
 /// @title Coefficient
 /// @notice IOT will get this coefficient by key to calculate amount of token equivilant to obseved data

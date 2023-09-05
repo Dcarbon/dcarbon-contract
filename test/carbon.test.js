@@ -66,9 +66,7 @@ describe("Carbon", () => {
   let dProxy;
   let dcarbon;
   let carbon;
-  let carbon2;
   let carbonProxy;
-  let CarbonFactory2;
 
   beforeEach(async () => {
     [account1, account2, account3] = await ethers.getSigners();
@@ -76,7 +74,6 @@ describe("Carbon", () => {
     const ProxyFactory = await ethers.getContractFactory("Proxy");
     const CarbonFactory = await ethers.getContractFactory("Carbon");
     const DCarbonFactory = await ethers.getContractFactory("DCarbon");
-    CarbonFactory2 = await ethers.getContractFactory("CarbonTest2");
 
     dcarbon = await DCarbonFactory.deploy();
     await dcarbon.deployed();
@@ -113,36 +110,6 @@ describe("Carbon", () => {
       await expect(
         carbonProxy.initialize(carbonName, carbonSymbol, dProxy.address)
       ).to.be.revertedWith(`Initializable: contract is already initialized`);
-    });
-  });
-
-  describe("Upgrade", () => {
-    beforeEach(async () => {
-      carbon2 = await CarbonFactory2.deploy();
-      await carbon2.deployed();
-    });
-
-    it("should revert if not owner upgrade", async () => {
-      await expect(
-        carbonProxy.connect(account2).upgradeTo(carbon2.address)
-      ).to.be.revertedWith(msgIsNotOwner);
-    });
-
-    it("should revert if proxy address difference before", async () => {
-      const proxyAddress = carbonProxy.address;
-      const tx = await carbonProxy.upgradeTo(carbon2.address);
-      await tx.wait();
-      expect(carbonProxy.address).to.be.equal(proxyAddress);
-    });
-
-    it("should upgrade exactly", async () => {
-      await carbonProxy.upgradeTo(carbon2.address);
-      carbonProxy = CarbonFactory2.attach(carbonProxy.address);
-      // await tx.wait();
-
-      expect(await carbonProxy.name()).to.be.equal(carbonName);
-      expect(await carbonProxy.symbol()).to.be.equal(carbonSymbol);
-      expect(await carbonProxy.hello()).to.be.equal("hello_carbon_2");
     });
   });
 

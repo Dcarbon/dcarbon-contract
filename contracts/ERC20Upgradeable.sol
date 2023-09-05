@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.18;
 
 import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -79,7 +79,7 @@ contract ERC20Upgradeable is ContextUpgradeable, IERC20MetadataUpgradeable {
      * For example, if `decimals` equals `2`, a balance of `505` tokens should
      * be displayed to a user as `5.05` (`505 / 10 ** 2`).
      *
-     * Tokens usually opt for a value of 18, imitating the relationship between
+     * Tokens usually opt for a value of 9, imitating the relationship between
      * Ether and Wei. This is the value {ERC20} uses, unless this function is
      * overridden;
      *

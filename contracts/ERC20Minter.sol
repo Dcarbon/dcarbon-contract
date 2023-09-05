@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.18;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -34,10 +34,6 @@ abstract contract ERC20Minter is
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    // Type hash for mint (EIP-712)
-    bytes32 private constant _MINT_TYPEHASH =
-        keccak256("Mint(address iot,uint256 amount,uint256 nonce)");
-
     struct MinterDevice {
         // IoT device status
         bool isActived;
@@ -50,6 +46,10 @@ abstract contract ERC20Minter is
         // Current nonce of the IoT device
         CountersUpgradeable.Counter nonce;
     }
+
+    // Type hash for mint (EIP-712)
+    bytes32 private constant _MINT_TYPEHASH =
+        keccak256("Mint(address iot,uint256 amount,uint256 nonce)");
 
     // IoT Device type => max amount for a signature
     mapping(uint32 => uint256) private _limits;
@@ -66,27 +66,13 @@ abstract contract ERC20Minter is
 
     // Fee percent for the Dcarbon foundation
     // 1 / 1e9 (1e9 equavalent 100%)
-    uint64 private _fee;
+    uint32 private _fee;
 
     // unlock rate for DCARBON when mint CARBON
-    uint64 private _rate; // 1 / 1e9 (1e9 equavalent 100%)
+    uint32 private _rate; // 1 / 1e9 (1e9 equavalent 100%)
 
     // DCARBON token contract address
     IERC20Upgradeable public _dcarbon;
-
-    // Initialize
-    function initERC20Minter(
-        address dcarbon,
-        uint64 rate_
-    ) internal onlyInitializing {
-        _rate = rate_;
-        _dcarbon = IERC20Upgradeable(dcarbon);
-
-        __Ownable_init_unchained();
-        __EIP712_init_unchained(name(), "1");
-
-        _fee = 5 * 1e7;
-    }
 
     /// @inheritdoc IERC20Minter
     function mint(
@@ -130,14 +116,6 @@ abstract contract ERC20Minter is
     }
 
     /// @inheritdoc IERC20Minter
-    function getNonce(
-        address deviceAddr
-    ) public view virtual override returns (uint256) {
-        MinterDevice storage device = _devices[deviceAddr];
-        return device.nonce.current();
-    }
-
-    /// @inheritdoc IERC20Minter
     function enableDevice(
         address minterOwner,
         address deviceAddress,
@@ -175,8 +153,10 @@ abstract contract ERC20Minter is
 
     /// @notice Set unlock rate for DCARBON when minting CARBON
     /// @param rate The value use for unlocking DCARBON when minting CARBON
-    function setRate(uint64 rate) public onlyOwner {
+    function setRate(uint32 rate) public onlyOwner {
         require(rate < 1e9, "M0040");
+        require(rate != _rate, "M0043");
+
         _rate = rate;
         emit ChangeRate(rate);
     }
@@ -185,6 +165,8 @@ abstract contract ERC20Minter is
     /// @param deviceType Type of device was set
     /// @param limit Limit value
     function setLimit(uint16 deviceType, uint256 limit) public onlyOwner {
+        require(_limits[deviceType] != limit, "M0024");
+
         _limits[deviceType] = limit;
         emit ChangeLimit(deviceType, limit);
     }
@@ -207,6 +189,28 @@ abstract contract ERC20Minter is
     /// @return Returns the amount of DCarbon tokens owned by `account`.
     function getDCarbon(address account) public view returns (uint256) {
         return _balaceDCarbon[account];
+    }
+
+    /// @inheritdoc IERC20Minter
+    function getNonce(
+        address deviceAddr
+    ) public view virtual override returns (uint256) {
+        MinterDevice storage device = _devices[deviceAddr];
+        return device.nonce.current();
+    }
+
+    // Initialize
+    function initERC20Minter(
+        address dcarbon,
+        uint32 rate_
+    ) internal onlyInitializing {
+        _rate = rate_;
+        _dcarbon = IERC20Upgradeable(dcarbon);
+
+        __Ownable_init_unchained();
+        __EIP712_init_unchained(name(), "1");
+
+        _fee = 5 * 1e7;
     }
 
     /// @notice Emitted when the DCARBON unlock rate is changed
